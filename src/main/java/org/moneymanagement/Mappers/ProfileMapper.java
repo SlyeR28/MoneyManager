@@ -15,7 +15,7 @@ public interface ProfileMapper {
     @Mapping(target = "isActive", constant = "false")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "activationCode", ignore = true)
+    @Mapping(target = "activationToken", ignore = true)
     ProfileEntity toEntity(ProfileRequest request);
 
 
