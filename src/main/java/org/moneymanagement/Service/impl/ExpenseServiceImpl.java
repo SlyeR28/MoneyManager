@@ -11,6 +11,7 @@ import org.moneymanagement.Repository.CategoryRepository;
 import org.moneymanagement.Repository.ExpenseRepository;
 import org.moneymanagement.Service.ExpenseService;
 import org.moneymanagement.Service.ProfileService;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -82,5 +83,19 @@ public class ExpenseServiceImpl implements ExpenseService {
         ProfileEntity profile = profileService.getCurrentProfile();
         BigDecimal expense = expenseRepository.findTotalExpenseByProfileId(profile.getId());
         return expense != null ? expense : BigDecimal.ZERO;
+    }
+
+    @Override
+    public List<ExpenseResponse> filterExpenses(LocalDate startDate, LocalDate endDate, String keyword, Sort sort) {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        List<Expense> expenseList = expenseRepository.
+                findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
+        return  expenseList.stream().map(expenseMapper::entityToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ExpenseResponse> getExpensesByUserOnDate(Long profileId, LocalDate date) {
+        List<Expense> expenseList = expenseRepository.findByProfileIdAndDate(profileId, date);
+        return  expenseList.stream().map(expenseMapper::entityToResponse).collect(Collectors.toList());
     }
 }

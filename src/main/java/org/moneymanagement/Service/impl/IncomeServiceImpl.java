@@ -13,6 +13,7 @@ import org.moneymanagement.Repository.CategoryRepository;
 import org.moneymanagement.Repository.IncomeRepository;
 import org.moneymanagement.Service.IncomeService;
 import org.moneymanagement.Service.ProfileService;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -82,5 +83,12 @@ public class IncomeServiceImpl implements IncomeService {
         BigDecimal income = incomeRepository.findTotalIncomeByProfileId(profile.getId());
         return income != null ? income : BigDecimal.ZERO;
 
+    }
+
+    @Override
+    public List<IncomeResponse> filterIncome(LocalDate startDate, LocalDate endDate, String keyword, Sort sort) {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        List<Income> incomeList = incomeRepository.findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
+       return incomeList.stream().map(incomeMapper::entityToResponse).collect(Collectors.toList());
     }
 }
