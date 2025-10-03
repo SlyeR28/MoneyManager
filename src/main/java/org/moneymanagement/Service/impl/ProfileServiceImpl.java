@@ -7,8 +7,8 @@ import org.moneymanagement.Payload.Request.ProfileRequest;
 import org.moneymanagement.Payload.Response.ProfileResponse;
 import org.moneymanagement.Repository.ProfileRepository;
 import org.moneymanagement.Service.ProfileService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +25,8 @@ public class ProfileServiceImpl implements ProfileService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.activation.url}")
+     private String activationUrl;
 
     @Override
     public ProfileResponse createProfile(ProfileRequest profileRequest) {
@@ -33,7 +35,7 @@ public class ProfileServiceImpl implements ProfileService {
        profileEntity.setPassword(passwordEncoder.encode(profileEntity.getPassword()));
         ProfileEntity savedEntity = profileRepository.save(profileEntity);
         //send activation email
-        String activationLink = "http://localhost:8080/api/v1/activation?token=" + savedEntity.getActivationToken();
+        String activationLink = activationUrl + "/api/v1/activation?token=" + savedEntity.getActivationToken();
         String subject = "Activate your Money Manager Account ";
         String body = "Click on the following link to activate your account : " + activationLink;
         emailService.sendEmail(profileEntity.getEmail(), subject, body);
