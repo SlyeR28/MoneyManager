@@ -14,5 +14,5 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
 
     List<Category>findByTypeAndProfileId(String type , Long profileId);
 
-    Boolean existsByTypeAndProfileId(String type , Long profileId);
+    Boolean existsByNameAndProfileId(String name , Long profileId);
 }

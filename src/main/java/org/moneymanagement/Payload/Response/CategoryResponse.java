@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class CategoryResponse {
 
+    private Long profileId;
     private Long id;
     private String name;
     private String type;

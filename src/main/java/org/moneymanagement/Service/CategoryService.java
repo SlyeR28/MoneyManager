@@ -7,10 +7,11 @@ import java.util.List;
 
 public interface CategoryService {
 
-    CategoryResponse createCategory(CategoryRequest categoryRequest);
-    CategoryResponse updateCategory(CategoryRequest categoryRequest);
+    CategoryResponse createCategory(CategoryRequest categoryRequest) throws RuntimeException;
+    CategoryResponse updateCategory( Long categoryId ,CategoryRequest categoryRequest);
     void deleteCategory(Long id);
     CategoryResponse findById(Long id);
-    List<CategoryResponse> findAll();
+    List<CategoryResponse> getCategoiesForCurrentUser();
+    List<CategoryResponse> getCategoiesByTypeForCurrentUser(String type);
 
 }

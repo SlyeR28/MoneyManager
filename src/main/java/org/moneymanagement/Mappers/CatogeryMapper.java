@@ -16,10 +16,11 @@ public interface CatogeryMapper {
     @Mapping(target = "createdAt", ignore = true) // DB handles creation timestamp
     @Mapping(target = "updatedAt", ignore = true) // DB handles update timestamp
     @Mapping(target = "profile.id", source = "profileId") // Map profileId from request to profile entity
-    Category toCategory(CategoryRequest categoryRequest);
+    Category toEntityCategory(CategoryRequest categoryRequest);
 
     // Map Category Entity to CategoryResponse
-    @Mapping(source = "profile.id", target = "id") // optional if you want profileId in response
+    @Mapping(source = "profile.id", target = "profileId") // optional if you want profileId in response
+    @Mapping(source = "id", target = "id") // optional if you want profileId in response
     @Mapping(source = "createdAt", target = "createdDate")
     @Mapping(source = "updatedAt", target = "updatedDate")
     CategoryResponse toCategoryResponse(Category category);
