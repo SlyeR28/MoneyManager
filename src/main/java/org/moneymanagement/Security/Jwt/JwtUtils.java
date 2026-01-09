@@ -18,22 +18,22 @@ public class JwtUtils {
     private static final String SECRET_KEY = Base64.getEncoder()
             .encodeToString("ksdfhjksksdfbkjsfgkjsfk;gngnnsfg;oro;gwoergiert0lkdfng5[oiegj0t5uu0erglkn".getBytes());
 
-    // ✅ Generate Token
+
     public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 5)) // 5 hours
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 5))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // ✅ Extract Email
+
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // ✅ Validate Token
+
     public boolean isTokenValid(String token, String email) {
         return (extractEmail(token).equals(email) && !isTokenExpired(token));
     }

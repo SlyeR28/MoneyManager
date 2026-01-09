@@ -67,7 +67,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public ProfileEntity getCurrentProfile() {
+    public ProfileEntity  getCurrentProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
        return  profileRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("Profile Not Found" + authentication.getName()));
@@ -81,7 +81,8 @@ public class ProfileServiceImpl implements ProfileService {
 
         if(email==null){
           currentUser =  getCurrentProfile();
-        }{
+        }
+        {
             currentUser=  profileRepository.findByEmail(email).
                     orElseThrow(() -> new UsernameNotFoundException("Profile Not Found" + email));
         }
