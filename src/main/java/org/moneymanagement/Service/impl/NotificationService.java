@@ -24,11 +24,11 @@ public class NotificationService {
     private final EmailService emailService;
     private final ExpenseService expenseService;
 
-   @Value("${money.manager.fronend.url}")
+   @Value("${money.manager.frontend.url}")
     private String  frontendUrl;
 
-   @Scheduled(cron = "0 * * * * *" , zone = "IST")
-//   @Scheduled(cron = "0 0 22 * * *" , zone = "IST")
+//   @Scheduled(cron = "0 * * * * *" , zone = "IST")
+   @Scheduled(cron = "0 0 22 * * *" , zone = "IST")
    public void sendDailyIncomeExpenseReminder(){
        log.info("Sending Daily Income Expense Reminder sendDailyIncomeExpenseReminder()");
        List<ProfileEntity> all = profileRepository.findAll();

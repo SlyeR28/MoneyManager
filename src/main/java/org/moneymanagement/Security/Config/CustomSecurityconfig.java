@@ -41,9 +41,13 @@ public class CustomSecurityconfig {
                 .authorizeHttpRequests(request->{
                     request.requestMatchers
                             ("/api/home" , "/api/v1/register"
-                                    , "api/v1/activation" ,"api/v1/login").permitAll();
+                                    , "api/v1/activation" ,"api/v1/login" , "/h2-console/**").permitAll();
                     request.anyRequest().authenticated();
-                }).sessionManagement(session->
+
+                })   .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin()))
+                 .
+                         sessionManagement(session->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

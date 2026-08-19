@@ -1,0 +1,50 @@
+spring:
+  profiles:
+    active:
+      - test
+  application:
+    name: MoneyManagement
+
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:MoneyManagement}?
+     useSSL=false&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  mail:
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    port: ${MAIL_PORT:587}
+    username: ${BREVO_LOGIN:}
+    password: ${BREVO_PASSWORD:}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+          from: ${BREVO_MAIL:}
+server:
+  port: ${SERVER_PORT:8080}
+
+money:
+  manager:
+    frontend:
+      url: http://localhost:5173
+
+
+app:
+  activation:
+    url: ${MONEY_MANAGER_BACKEND_URL:}
+
+
