@@ -96,6 +96,7 @@ pipeline {
 
     post {
         success {
+            echo ' '
             echo 'Pipeline completed successfully!'
         }
         failure {
