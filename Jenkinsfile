@@ -2,11 +2,8 @@ pipeline {
     agent none
 
     environment {
-        // Docker image repository (change to your Docker Hub username/repo)
         DOCKER_IMAGE = 'rishu2801/money-management'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
-
-        // Local SonarQube server URL (host IP from LXD bridge, likely 10.100.0.1)
         SONAR_HOST_URL = 'http://10.100.0.1:9000'
         SONAR_PROJECT_KEY = 'MoneyManagement'
     }
@@ -31,10 +28,8 @@ pipeline {
         stage('Test & Security') {
             parallel {
                 stage('Test + SonarQube') {
-                    agent {
-                        label 'test-agent'
-                        skipDefaultCheckout true   // <-- important: no git on this agent
-                    }
+                    agent { label 'test-agent' }
+                    options { skipDefaultCheckout() }   // <-- move here
                     environment {
                         SPRING_PROFILES_ACTIVE = 'test'
                     }
@@ -62,10 +57,8 @@ pipeline {
                 }
 
                 stage('Dependency Scan (OWASP)') {
-                    agent {
-                        label 'security-agent'
-                        skipDefaultCheckout true   // <-- important
-                    }
+                    agent { label 'security-agent' }
+                    options { skipDefaultCheckout() }   // <-- move here
                     steps {
                         unstash 'pom-for-owasp'
                         sh '''
@@ -86,10 +79,8 @@ pipeline {
         }
 
         stage('Docker Build, Scan, Push') {
-            agent {
-                label 'docker-agent'
-                skipDefaultCheckout true   // <-- important
-            }
+            agent { label 'docker-agent' }
+            options { skipDefaultCheckout() }   // <-- move here
             steps {
                 unstash 'jar-artifact'
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
