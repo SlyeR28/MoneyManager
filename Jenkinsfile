@@ -3,7 +3,7 @@ pipeline {
 
     stages {
         stage('Build') {
-            agent { label 'build-agent' }
+            agent { label 'build-agent' }   // Make sure node has this label
             environment {
                 SPRING_PROFILES_ACTIVE = 'test'
             }
