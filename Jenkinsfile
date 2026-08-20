@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Docker image repository (change to your Docker Hub username/repo)
-        DOCKER_IMAGE = 'YOUR_DOCKERHUB_USERNAME/money-management'
+        DOCKER_IMAGE = 'rishu2801/money-management'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
 
         // Local SonarQube server URL (host IP from LXD bridge, likely 10.100.0.1)
