@@ -1,0 +1,18 @@
+pipeline {
+    agent none
+
+    stages {
+        stage('Build') {
+            agent { label 'build-agent' }
+            environment {
+                SPRING_PROFILES_ACTIVE = 'test'
+            }
+            steps {
+                checkout scm
+                sh 'mvn clean package -DskipTests=false'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
+            }
+        }
+    }
+}
