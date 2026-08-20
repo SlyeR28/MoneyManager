@@ -15,7 +15,7 @@ pipeline {
         stage('Build') {
             agent { label 'build-agent' }
             environment {
-                SPRING_PROFILES_ACTIVE = 'test'   // not strictly used, but set for safety
+                SPRING_PROFILES_ACTIVE = 'test'
                 MAVEN_OPTS = '-Xmx1024m'
             }
             steps {
@@ -31,7 +31,10 @@ pipeline {
         stage('Test & Security') {
             parallel {
                 stage('Test + SonarQube') {
-                    agent { label 'test-agent' }
+                    agent {
+                        label 'test-agent'
+                        skipDefaultCheckout true   // <-- important: no git on this agent
+                    }
                     environment {
                         SPRING_PROFILES_ACTIVE = 'test'
                     }
@@ -59,7 +62,10 @@ pipeline {
                 }
 
                 stage('Dependency Scan (OWASP)') {
-                    agent { label 'security-agent' }
+                    agent {
+                        label 'security-agent'
+                        skipDefaultCheckout true   // <-- important
+                    }
                     steps {
                         unstash 'pom-for-owasp'
                         sh '''
@@ -80,7 +86,10 @@ pipeline {
         }
 
         stage('Docker Build, Scan, Push') {
-            agent { label 'docker-agent' }
+            agent {
+                label 'docker-agent'
+                skipDefaultCheckout true   // <-- important
+            }
             steps {
                 unstash 'jar-artifact'
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
@@ -96,12 +105,10 @@ pipeline {
 
     post {
         success {
-            echo ' '
             echo 'Pipeline completed successfully!'
         }
         failure {
             echo 'Pipeline failed. Check logs.'
-            echo 'i am good'
         }
     }
 }
