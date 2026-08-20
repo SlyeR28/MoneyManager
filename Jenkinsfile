@@ -56,7 +56,7 @@ pipeline {
             }
         }
 
-   stage('Dependency Scan (OWASP)') {
+  stage('Dependency Scan (OWASP)') {
     agent { label 'security-agent' }
     options { skipDefaultCheckout() }
     steps {
