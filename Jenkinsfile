@@ -25,62 +25,58 @@ pipeline {
             }
         }
 
-        stage('Test & Security') {
-            parallel {
-                stage('Test + SonarQube') {
-                    agent { label 'test-agent' }
-                    options { skipDefaultCheckout() }   // <-- move here
-                    environment {
-                        SPRING_PROFILES_ACTIVE = 'test'
-                    }
-                    steps {
-                        unstash 'test-artifacts'
-                        sh 'mvn test'
+        stage('Test + SonarQube') {
+            agent { label 'test-agent' }
+            options { skipDefaultCheckout() }
+            environment {
+                SPRING_PROFILES_ACTIVE = 'test'
+            }
+            steps {
+                unstash 'test-artifacts'
+                sh 'mvn test'
 
-                        script {
-                            withSonarQubeEnv('SonarQube') {
-                                sh """
-                                    sonar-scanner \
-                                      -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                      -Dsonar.host.url=${SONAR_HOST_URL} \
-                                      -Dsonar.login=${SONAR_TOKEN}
-                                """
-                            }
-                            timeout(time: 1, unit: 'HOURS') {
-                                def qg = waitForQualityGate()
-                                if (qg.status != 'OK') {
-                                    error "SonarQube quality gate failed: ${qg.status}"
-                                }
-                            }
+                script {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            sonar-scanner \
+                              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.login=${SONAR_TOKEN}
+                        """
+                    }
+                    timeout(time: 1, unit: 'HOURS') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "SonarQube quality gate failed: ${qg.status}"
                         }
-                    }
-                }
-
-                stage('Dependency Scan (OWASP)') {
-                    agent { label 'security-agent' }
-                    options { skipDefaultCheckout() }   // <-- move here
-                    steps {
-                        unstash 'pom-for-owasp'
-                        sh '''
-                            dependency-check \
-                              --project MoneyManagement \
-                              --scan pom.xml \
-                              --format HTML \
-                              --out /tmp/dependency-report
-
-                            if grep -q "CRITICAL" /tmp/dependency-report/dependency-check-report.html; then
-                                echo "Critical vulnerabilities found!"
-                                exit 1
-                            fi
-                        '''
                     }
                 }
             }
         }
 
+        stage('Dependency Scan (OWASP)') {
+            agent { label 'security-agent' }
+            options { skipDefaultCheckout() }
+            steps {
+                unstash 'pom-for-owasp'
+                sh '''
+                    dependency-check \
+                      --project MoneyManagement \
+                      --scan pom.xml \
+                      --format HTML \
+                      --out /tmp/dependency-report
+
+                    if grep -q "CRITICAL" /tmp/dependency-report/dependency-check-report.html; then
+                        echo "Critical vulnerabilities found!"
+                        exit 1
+                    fi
+                '''
+            }
+        }
+
         stage('Docker Build, Scan, Push') {
             agent { label 'docker-agent' }
-            options { skipDefaultCheckout() }   // <-- move here
+            options { skipDefaultCheckout() }
             steps {
                 unstash 'jar-artifact'
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
