@@ -35,7 +35,7 @@ pipeline {
                 unstash 'test-artifacts'
                 sh 'mvn test'
 
-                withSonarQubeEnv('Sonar') {
+                withSonarQubeEnv('SonarQube') {
                     sh """
                         sonar-scanner \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
