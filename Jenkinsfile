@@ -100,6 +100,7 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed. Check logs.'
+            echo 'i am good'
         }
     }
 }
