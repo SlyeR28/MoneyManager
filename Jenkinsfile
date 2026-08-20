@@ -18,7 +18,7 @@ pipeline {
                 checkout scm
                 sh 'mvn clean package -DskipTests'
 
-                stash includes: 'target/*.jar', name: 'jar-artifact'
+                stash includes: 'target/*.jar', excludes: 'target/*.jar.original', name: 'jar-artifact'
                 stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
                 stash includes: 'pom.xml', name: 'pom-for-owasp'
                 stash includes: 'Dockerfile', name: 'dockerfile'
