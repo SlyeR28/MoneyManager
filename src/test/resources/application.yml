@@ -1,0 +1,48 @@
+spring:
+  profiles:
+    active: test
+  application:
+    name: MoneyManagement-Test
+
+  datasource:
+    url: jdbc:h2:mem:moneymanagement_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+          from: test@example.com
+
+money:
+  manager:
+    frontend:
+      url: http://localhost:5173
+
+app:
+  activation:
+    url: http://localhost:8080
