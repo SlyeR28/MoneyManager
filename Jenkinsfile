@@ -56,22 +56,24 @@ pipeline {
             }
         }
 
- stage('Dependency Scan (OWASP)') {
+stage('Dependency Scan (OWASP)') {
     agent { label 'security-agent' }
     options { skipDefaultCheckout() }
     steps {
         unstash 'pom-for-owasp'
-        withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-            sh '''
-                mkdir -p /home/jenkins/dependency-check-data
-                dependency-check \
-                  --project MoneyManagement \
-                  --scan pom.xml \
-                  --format HTML \
-                  --out /tmp/dependency-report \
-                  --data /home/jenkins/dependency-check-data \
-                  --nvdApiKey $NVD_API_KEY
-            '''
+        retry(3) {
+            withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                dependencyCheck(
+                    additionalArguments: '''
+                        --scan pom.xml \
+                        --format HTML \
+                        --out /tmp/dependency-report \
+                        --data /home/jenkins/dependency-check-data \
+                        --nvdApiKey $NVD_API_KEY
+                    ''',
+                    odcInstallation: 'DependencyCheck'
+                )
+            }
         }
     }
 }
