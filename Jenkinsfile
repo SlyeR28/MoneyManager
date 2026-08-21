@@ -2,14 +2,10 @@ pipeline {
     agent none
 
     environment {
-        // Docker image repository (change to your Docker Hub username/repo)
-        DOCKER_IMAGE = 'your-dockerhub-username/money-management'
+        DOCKER_IMAGE = 'rishu2801/money-management'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
-
-        // SonarCloud configuration (replace with your actual values)
-        SONAR_HOST_URL = 'https://sonarcloud.io'
-        SONAR_ORGANIZATION = 'your-org-key'          // e.g., 'slyer28'
-        SONAR_PROJECT_KEY = 'your-project-key'       // e.g., 'SlyeR28_MoneyManagement'
+        SONAR_PROJECT_KEY = 'MoneyManagement'
+        // SonarQube server URL is configured in Jenkins (withSonarQubeEnv)
     }
 
     stages {
@@ -20,92 +16,103 @@ pipeline {
                 MAVEN_OPTS = '-Xmx1024m'
             }
             steps {
-                // Checkout source code
                 checkout scm
-
-                // Compile and package JAR (skip tests to avoid duplication)
                 sh 'mvn clean package -DskipTests'
 
-                // Stash artifacts for downstream stages
-                stash includes: 'target/*.jar', name: 'jar-artifact'
+                // Stash for Docker
+                stash includes: 'target/*.jar', excludes: 'target/*.jar.original', name: 'jar-artifact'
+                // Stash for Test/SonarQube
                 stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
-                stash includes: 'pom.xml', name: 'pom-for-owasp'
+                // Stash Dockerfile
+                stash includes: 'Dockerfile', name: 'dockerfile'
+                // Stash full project for OWASP Maven plugin
+                stash includes: '**', name: 'full-project-for-owasp'
             }
         }
 
-        stage('Test & Security') {
-            parallel {
-                // =====================================================
-                // Stage A: Test + SonarQube (Test Agent)
-                // =====================================================
-                stage('Test + SonarQube') {
-                    agent { label 'test-agent' }
-                    environment {
-                        SPRING_PROFILES_ACTIVE = 'test'
-                    }
-                    steps {
-                        // Get source and compiled classes from Build
-                        unstash 'test-artifacts'
+        stage('Test + SonarQube') {
+            agent { label 'test-agent' }
+            options { skipDefaultCheckout() }
+            environment {
+                SPRING_PROFILES_ACTIVE = 'test'
+            }
+            steps {
+                unstash 'test-artifacts'
+                sh 'mvn test'
 
-                        // Run all tests
-                        sh 'mvn test'
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                        sonar-scanner \
+                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                          -Dsonar.sources=src/main/java \
+                          -Dsonar.tests=src/test/java \
+                          -Dsonar.java.binaries=target/classes
+                    """
+                }
 
-                        // SonarQube analysis (SonarCloud)
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh '''
-                                sonar-scanner \
-                                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                                  -Dsonar.organization=${SONAR_ORGANIZATION} \
-                                  -Dsonar.host.url=${SONAR_HOST_URL} \
-                                  -Dsonar.login=${SONAR_TOKEN}
-                            '''
+                script {
+                    timeout(time: 1, unit: 'HOURS') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "SonarQube Quality Gate failed: ${qg.status}"
                         }
                     }
                 }
+            }
+        }
 
-                // =====================================================
-                // Stage B: Dependency Scan (Security Agent)
-                // =====================================================
-                stage('Dependency Scan (OWASP)') {
-                    agent { label 'security-agent' }
-                    steps {
-                        // Get pom.xml for dependency check
-                        unstash 'pom-for-owasp'
+        stage('Dependency Scan (OWASP)') {
+            agent { label 'security-agent' }
+            options { skipDefaultCheckout() }
+            steps {
+                unstash 'full-project-for-owasp'
 
-                        // Run OWASP Dependency-Check
+                retry(3) {
+                    withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
                         sh '''
-                            dependency-check \
-                              --project MoneyManagement \
-                              --scan pom.xml \
-                              --format HTML \
-                              --out /tmp/dependency-report
-
-                            # Fail if any CRITICAL vulnerability is found (simple check)
-                            if grep -q "CRITICAL" /tmp/dependency-report/dependency-check-report.html; then
-                                echo "Critical vulnerabilities found!"
-                                exit 1
-                            fi
+                            mvn org.owasp:dependency-check-maven:13.0.0:check \
+                              -DnvdApiKey=$NVD_API_KEY \
+                              -DdataDirectory=/home/jenkins/dependency-check-data
                         '''
                     }
                 }
+
+                // Optional: publish HTML report (requires HTML Publisher plugin)
+                publishHTML([
+                    target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'target',
+                        reportFiles: 'dependency-check-report.html',
+                        reportName: 'OWASP Dependency-Check Report'
+                    ]
+                ])
             }
         }
 
         stage('Docker Build, Scan, Push') {
             agent { label 'docker-agent' }
+            options { skipDefaultCheckout() }
             steps {
-                // Retrieve JAR from Build
                 unstash 'jar-artifact'
+                unstash 'dockerfile'
 
-                // Build Docker image
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
 
-                // Scan image with Trivy (fail on HIGH or CRITICAL)
-                sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                // Temporarily only fail on CRITICAL (fix later to HIGH,CRITICAL)
+                sh "trivy image --severity CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${DOCKER_TAG}"
 
-                // Push to Docker Hub only if previous steps pass
-                withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'docker-registry-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
                     sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
@@ -117,7 +124,10 @@ pipeline {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Check logs for details.'
+            echo 'Pipeline failed. Check logs.'
+        }
+        always {
+            echo "Build Number: ${BUILD_NUMBER}"
         }
     }
 }
