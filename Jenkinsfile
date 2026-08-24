@@ -5,7 +5,6 @@ pipeline {
         DOCKER_IMAGE = 'rishu2801/money-management'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         SONAR_PROJECT_KEY = 'MoneyManagement'
-        // SonarQube server URL is configured in Jenkins (withSonarQubeEnv)
     }
 
     stages {
@@ -19,13 +18,9 @@ pipeline {
                 checkout scm
                 sh 'mvn clean package -DskipTests'
 
-                // Stash for Docker
                 stash includes: 'target/*.jar', excludes: 'target/*.jar.original', name: 'jar-artifact'
-                // Stash for Test/SonarQube
                 stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
-                // Stash Dockerfile
                 stash includes: 'Dockerfile', name: 'dockerfile'
-                // Stash full project for OWASP Maven plugin
                 stash includes: '**', name: 'full-project-for-owasp'
             }
         }
@@ -77,7 +72,6 @@ pipeline {
                     }
                 }
 
-                // Optional: publish HTML report (requires HTML Publisher plugin)
                 publishHTML([
                     target: [
                         allowMissing: true,
@@ -99,8 +93,6 @@ pipeline {
                 unstash 'dockerfile'
 
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-
-                // Temporarily only fail on CRITICAL (fix later to HIGH,CRITICAL)
                 sh "trivy image --severity CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${DOCKER_TAG}"
 
                 withCredentials([
@@ -121,10 +113,16 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'CI pipeline completed successfully. Triggering IaC deployment...'
+            build job: 'money-app-IaC', parameters: [
+                string(name: 'ENVIRONMENT', value: 'prod'),
+                string(name: 'AWS_REGION', value: 'ap-south-1'),
+                string(name: 'ACTION', value: 'Deploy'),
+                string(name: 'DOCKER_TAG', value: env.BUILD_NUMBER)
+            ], wait: false
         }
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo 'CI pipeline failed, skipping IaC.'
         }
         always {
             echo "Build Number: ${BUILD_NUMBER}"
