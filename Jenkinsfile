@@ -43,7 +43,7 @@ pipeline {
           -Dsonar.login=$SONAR_TOKEN \
           -Dsonar.scm.disabled=true \
           -Dsonar.java.libraries=target/classes \
-          -Dsonar.test.exclusions='**/src/test/**'
+         
     '''
 }
 
