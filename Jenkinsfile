@@ -34,14 +34,16 @@ pipeline {
     steps {
         cleanWs()
         unstash 'test-artifacts'
-        sh 'mvn test'   // generate coverage and test reports
+        // verify phase runs tests AND triggers jacoco:report, producing target/site/jacoco/jacoco.xml
+        sh 'mvn verify'
 
         withSonarQubeEnv('SonarQube') {
             sh """
                 mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
                   -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                   -Dsonar.scm.disabled=true \
-                  -Dsonar.test.exclusions=**/src/test/**
+                  -Dsonar.test.exclusions=**/src/test/** \
+                  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
             """
         }
 
