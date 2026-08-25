@@ -13,13 +13,9 @@ spring:
 
   jpa:
     hibernate:
-      # validate, not update - never let the app auto-alter the prod schema.
-      # Run migrations deliberately (Flyway/Liquibase or manual), separately.
       ddl-auto: validate
     show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+
 
   mail:
     host: ${MAIL_HOST:smtp-relay.brevo.com}

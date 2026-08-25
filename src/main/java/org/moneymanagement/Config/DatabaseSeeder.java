@@ -21,7 +21,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Slf4j
 @Component
@@ -216,7 +216,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             "Bakery & Snacks", "Clothing Store", "Cleaning Services", "Electronics Gadgets"
         };
 
-        Random random = new Random(profile.getId() != null ? profile.getId() : 42);
+        SecureRandom random = new SecureRandom();
 
         for (int i = 1; i <= 35; i++) {
             Category category = expCategories[random.nextInt(expCategories.length)];

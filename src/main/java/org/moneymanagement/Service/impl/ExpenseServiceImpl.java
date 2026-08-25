@@ -61,13 +61,14 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public void deleteExpense(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
-        Expense expense = expenseRepository.findById(id).orElseThrow(() -> new RuntimeException("Expense not found"));
-       if(!expense.getProfile().getId().equals(profile.getId())) {
-           throw new RuntimeException("Unauthorized to delete this expense");
-       }
+        Expense expense = expenseRepository.findById(id).orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Expense not found with id: " + id));
+        if(!expense.getProfile().getId().equals(profile.getId())) {
+            throw new org.moneymanagement.Exception.UnauthorizedException("Unauthorized to delete this expense");
+        }
 
-         expenseRepository.delete(expense);
+        expenseRepository.delete(expense);
     }
+
 
     @Override
     public List<ExpenseResponse> getLastest5ExpensesForCurrentUser() {

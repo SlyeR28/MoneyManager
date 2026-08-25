@@ -13,11 +13,5 @@ public class HomeController {
     public String healthCheck(){
         return "Application is Running";
     }
-
-//
-//    @GetMapping("/csrf")
-//    public CsrfToken csrfToken(HttpServletRequest request) {
-//        // Spring Security automatically attaches the CsrfToken object to the request
-//        return (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-//    }
 }
+

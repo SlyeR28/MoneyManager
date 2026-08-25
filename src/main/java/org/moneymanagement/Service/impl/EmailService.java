@@ -23,9 +23,10 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-        }catch (Exception e){
-            throw new RuntimeException(e.getMessage());
+        } catch (Exception e) {
+            throw new org.moneymanagement.Exception.EmailSendingException("Failed to send email to " + to + ": " + e.getMessage(), e);
         }
+
     }
 
 }

@@ -23,10 +23,10 @@ public class CategoryServiceImpl implements CategoryService {
 
 
     @Override
-    public CategoryResponse createCategory(CategoryRequest categoryRequest) throws RuntimeException {
+    public CategoryResponse createCategory(CategoryRequest categoryRequest) {
         ProfileEntity currentProfile = profileService.getCurrentProfile();
         if(Boolean.TRUE.equals(categoryRepo.existsByNameAndProfileId(categoryRequest.getName(), currentProfile.getId()))){
-            throw new RuntimeException("Category with name " + categoryRequest.getName() + " already exists");
+            throw new org.moneymanagement.Exception.DuplicateResourceException("Category with name " + categoryRequest.getName() + " already exists");
         }
         Category category = catogeryMapper.toEntityCategory(categoryRequest);
         categoryRepo.save(category);
@@ -38,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(Long categoryId ,CategoryRequest categoryRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(categoryId, profile.getId())
-                .orElseThrow(() -> new RuntimeException("Category Not Found"));
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category Not Found with id: " + categoryId));
         category.setName(categoryRequest.getName());
         category.setIcon(categoryRequest.getIcon());
         category.setType(categoryRequest.getType());
@@ -49,13 +49,20 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void deleteCategory(Long id) {
-
+        ProfileEntity profile = profileService.getCurrentProfile();
+        Category category = categoryRepo.findByIdAndProfileId(id, profile.getId())
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category Not Found with id: " + id));
+        categoryRepo.delete(category);
     }
 
     @Override
     public CategoryResponse findById(Long id) {
-        return null;
+        ProfileEntity profile = profileService.getCurrentProfile();
+        Category category = categoryRepo.findByIdAndProfileId(id, profile.getId())
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category Not Found with id: " + id));
+        return catogeryMapper.toCategoryResponse(category);
     }
+
 
     @Override
     public List<CategoryResponse> getCategoiesForCurrentUser() {

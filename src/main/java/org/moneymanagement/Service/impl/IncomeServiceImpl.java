@@ -61,12 +61,13 @@ public class IncomeServiceImpl implements IncomeService {
     @Override
     public void deleteExpense(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
-        Income income = incomeRepository.findById(id).orElseThrow(() -> new RuntimeException("Expense not found"));
+        Income income = incomeRepository.findById(id).orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Income not found with id: " + id));
         if(!income.getProfile().getId().equals(profile.getId())) {
-            throw new RuntimeException("Unauthorized to delete this income");
+            throw new org.moneymanagement.Exception.UnauthorizedException("Unauthorized to delete this income");
         }
         incomeRepository.delete(income);
     }
+
 
     @Override
     public List<IncomeResponse> getLastest5ExpensesForCurrentUser() {

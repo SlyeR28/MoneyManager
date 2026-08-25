@@ -36,17 +36,14 @@ pipeline {
         sh 'mvn test'   // generate coverage and test reports
 
         withSonarQubeEnv('SonarQube') {
-            sh '''
+            sh """
                 mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                  -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                  -Dsonar.host.url=$SONAR_HOST_URL \
-                  -Dsonar.login=$SONAR_TOKEN \
+                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                   -Dsonar.scm.disabled=true \
-                  -Dsonar.java.libraries=target/classes
                   -Dsonar.test.exclusions=**/src/test/**
-                  
-            '''
+            """
         }
+
 
         script {
             timeout(time: 1, unit: 'HOURS') {
