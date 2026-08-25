@@ -12,8 +12,6 @@ import org.moneymanagement.Service.ProfileService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -65,13 +63,13 @@ public class CategoryServiceImpl implements CategoryService {
         List<Category> byProfileId = categoryRepo.findByProfileId(currentProfile.getId());
         return byProfileId.stream()
                 .map(catogeryMapper::toCategoryResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<CategoryResponse> getCategoiesByTypeForCurrentUser(String type) {
         ProfileEntity profile = profileService.getCurrentProfile();
         List<Category> profileId = categoryRepo.findByTypeAndProfileId(type, profile.getId());
-        return profileId.stream().map(catogeryMapper::toCategoryResponse).collect(Collectors.toList());
+        return profileId.stream().map(catogeryMapper::toCategoryResponse).toList();
     }
 }

@@ -2,7 +2,6 @@ package org.moneymanagement.Service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.moneymanagement.Entity.Category;
-import org.moneymanagement.Entity.Expense;
 import org.moneymanagement.Entity.Income;
 import org.moneymanagement.Entity.ProfileEntity;
 import org.moneymanagement.Mappers.IncomeMapper;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,7 +55,7 @@ public class IncomeServiceImpl implements IncomeService {
         List<Income> between = incomeRepository.findByProfileIdAndDateBetween
                 (profile.getId(), start, end);
 
-        return   between.stream().map(incomeMapper::entityToResponse).collect(Collectors.toList());
+        return   between.stream().map(incomeMapper::entityToResponse).toList();
     }
 
     @Override
@@ -74,7 +72,7 @@ public class IncomeServiceImpl implements IncomeService {
     public List<IncomeResponse> getLastest5ExpensesForCurrentUser() {
         ProfileEntity profile = profileService.getCurrentProfile();
         List<Income> orderByDateDesc = incomeRepository.findByProfileIdOrderByDateDesc(profile.getId());
-       return orderByDateDesc.stream().map(incomeMapper::entityToResponse).collect(Collectors.toList());
+       return orderByDateDesc.stream().map(incomeMapper::entityToResponse).toList();
     }
 
     @Override
@@ -89,6 +87,6 @@ public class IncomeServiceImpl implements IncomeService {
     public List<IncomeResponse> filterIncome(LocalDate startDate, LocalDate endDate, String keyword, Sort sort) {
         ProfileEntity profile = profileService.getCurrentProfile();
         List<Income> incomeList = incomeRepository.findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
-       return incomeList.stream().map(incomeMapper::entityToResponse).collect(Collectors.toList());
+       return incomeList.stream().map(incomeMapper::entityToResponse).toList();
     }
 }

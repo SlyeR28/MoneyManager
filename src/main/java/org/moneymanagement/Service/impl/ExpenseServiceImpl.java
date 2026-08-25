@@ -74,7 +74,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     public List<ExpenseResponse> getLastest5ExpensesForCurrentUser() {
         ProfileEntity profile = profileService.getCurrentProfile();
         List<Expense> orderByDateDesc = expenseRepository.findTop5ByProfileIdOrderByDateDesc(profile.getId());
-        return  orderByDateDesc.stream().map(expenseMapper::entityToResponse).collect(Collectors.toList());
+        return  orderByDateDesc.stream().map(expenseMapper::entityToResponse).toList();
 
     }
 
@@ -90,12 +90,12 @@ public class ExpenseServiceImpl implements ExpenseService {
         ProfileEntity profile = profileService.getCurrentProfile();
         List<Expense> expenseList = expenseRepository.
                 findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
-        return  expenseList.stream().map(expenseMapper::entityToResponse).collect(Collectors.toList());
+        return  expenseList.stream().map(expenseMapper::entityToResponse).toList();
     }
 
     @Override
     public List<ExpenseResponse> getExpensesByUserOnDate(Long profileId, LocalDate date) {
         List<Expense> expenseList = expenseRepository.findByProfileIdAndDate(profileId, date);
-        return  expenseList.stream().map(expenseMapper::entityToResponse).collect(Collectors.toList());
+        return  expenseList.stream().map(expenseMapper::entityToResponse).toList();
     }
 }
