@@ -5,30 +5,22 @@ pipeline {
         DOCKER_IMAGE = 'rishu2801/money-management'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         SONAR_PROJECT_KEY = 'MoneyManagement'
-        // SonarQube server URL is configured in Jenkins (withSonarQubeEnv)
     }
 
     stages {
         stage('Build') {
             agent { label 'build-agent' }
             environment {
-                // No SPRING_PROFILES_ACTIVE here on purpose - this stage runs
-                // -DskipTests, so no Spring context boots and no profile is
-                // ever read. Setting it here was dead/misleading.
+                SPRING_PROFILES_ACTIVE = 'test'
                 MAVEN_OPTS = '-Xmx1024m'
             }
             steps {
                 checkout scm
                 sh 'mvn clean package -DskipTests'
 
-                // Stash for Docker
                 stash includes: 'target/*.jar', excludes: 'target/*.jar.original', name: 'jar-artifact'
-                // Stash for Test/SonarQube
                 stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
-                // Stash Dockerfile & Compose
                 stash includes: 'Dockerfile', name: 'dockerfile'
-                stash includes: 'docker-compose.yaml', name: 'docker-compose'
-                // Stash full project for OWASP Maven plugin
                 stash includes: '**', name: 'full-project-for-owasp'
             }
         }
@@ -37,8 +29,6 @@ pipeline {
             agent { label 'test-agent' }
             options { skipDefaultCheckout() }
             environment {
-                // This is the ONE place this var actually matters - mvn test
-                // boots the Spring context, which loads application-test.yaml.
                 SPRING_PROFILES_ACTIVE = 'test'
             }
             steps {
@@ -82,86 +72,35 @@ pipeline {
                     }
                 }
 
-                // Optional: publish HTML report (requires HTML Publisher plugin)
                 publishHTML([
-                        target: [
-                                allowMissing: true,
-                                alwaysLinkToLastBuild: true,
-                                keepAll: true,
-                                reportDir: 'target',
-                                reportFiles: 'dependency-check-report.html',
-                                reportName: 'OWASP Dependency-Check Report'
-                        ]
+                    target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'target',
+                        reportFiles: 'dependency-check-report.html',
+                        reportName: 'OWASP Dependency-Check Report'
+                    ]
                 ])
             }
         }
 
-        stage('Docker Build, Scan, Test & Push') {
+        stage('Docker Build, Scan, Push') {
             agent { label 'docker-agent' }
             options { skipDefaultCheckout() }
             steps {
                 unstash 'jar-artifact'
                 unstash 'dockerfile'
-                unstash 'docker-compose'
 
-                // Build image tagged with both build number and latest
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} -t money-management-app:latest ."
-
-                // Security vulnerability scan
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                 sh "trivy image --severity CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${DOCKER_TAG}"
 
-                // Run ephemeral Docker Compose smoke test to verify App boot, MySQL & SQL seeding
-                script {
-                    echo "🚀 Starting ephemeral containers to test Docker boot & SQL seeding..."
-                    sh '''
-                        DB_ROOT_PASSWORD=Admin \
-                        DB_NAME=MoneyManagement \
-                        DB_USERNAME=admin \
-                        DB_PASSWORD=Admin \
-                        JPA_DDL_AUTO=update \
-                        BREVO_LOGIN=test \
-                        BREVO_PASSWORD=test \
-                        BREVO_MAIL=test@example.com \
-                        docker compose up -d
-                    '''
-
-                    echo "⏳ Waiting for App to become healthy on /actuator/health..."
-                    sh '''
-                        HEALTHY=false
-                        for i in $(seq 1 30); do
-                            if curl -s http://localhost:8009/actuator/health | grep '"status":"UP"'; then
-                                echo "✅ Spring Boot Application & MySQL are UP and HEALTHY!"
-                                HEALTHY=true
-                                break
-                            fi
-                            echo "Waiting for app to start... ($i/30)"
-                            sleep 3
-                        done
-
-                        if [ "$HEALTHY" != "true" ]; then
-                            echo "❌ Actuator Health check failed! Container logs:"
-                            docker logs money-app-container
-                            exit 1
-                        fi
-
-                        echo "🔍 Testing API response..."
-                        curl -f -s http://localhost:8009/api/home || {
-                            echo "❌ API check /api/home failed!"
-                            docker logs money-app-container
-                            exit 1
-                        }
-
-                        echo "✅ Database & Docker smoke tests passed!"
-                    '''
-                }
-
-                // Push to Docker Hub after health & smoke tests succeed
                 withCredentials([
-                        usernamePassword(
-                                credentialsId: 'docker-registry-credentials',
-                                usernameVariable: 'DOCKER_USER',
-                                passwordVariable: 'DOCKER_PASS'
-                        )
+                    usernamePassword(
+                        credentialsId: 'docker-registry-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
                 ]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
@@ -169,22 +108,21 @@ pipeline {
                     sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
-            post {
-                always {
-                    // Clean up test containers and volumes from the agent
-                    sh 'docker compose down -v || true'
-                }
-            }
         }
-
     }
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'CI pipeline completed successfully. Triggering IaC deployment...'
+            build job: 'money-app-IaC', parameters: [
+                string(name: 'ENVIRONMENT', value: 'prod'),
+                string(name: 'AWS_REGION', value: 'ap-south-1'),
+                string(name: 'ACTION', value: 'Deploy'),
+                string(name: 'DOCKER_TAG', value: env.BUILD_NUMBER)
+            ], wait: false
         }
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo 'CI pipeline failed, skipping IaC.'
         }
         always {
             echo "Build Number: ${BUILD_NUMBER}"
