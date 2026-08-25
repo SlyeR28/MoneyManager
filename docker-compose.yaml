@@ -5,12 +5,12 @@ services:
     image: mysql:8.0
     container_name: money-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -21,22 +21,21 @@ services:
 
   app:
     build: .
+    image:  money-management-app:latest
     container_name: money-app-container
     depends_on:
       mysql:
         condition: service_healthy
     environment:
-      DB_HOST: mysql
-      DB_PORT: 3306
+      SPRING_PROFILES_ACTIVE: docker
       DB_NAME: ${DB_NAME}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      JPA_DDL_AUTO: update
-
-
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
       BREVO_LOGIN: ${BREVO_LOGIN}
       BREVO_PASSWORD: ${BREVO_PASSWORD}
       BREVO_MAIL: ${BREVO_MAIL}
+
 
     ports:
       - "8009:8009"

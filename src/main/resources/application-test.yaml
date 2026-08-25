@@ -1,16 +1,53 @@
 spring:
+  application:
+    name: MoneyManagement
+
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+    defer-datasource-initialization: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 
+  # Seeds test data.sql after Hibernate creates the schema (create-drop above).
+  # If you don't have a src/test/resources/data.sql, either add one or delete this block.
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+
+  mail:
+    # Fake SMTP target - nothing actually gets sent, this just satisfies the
+    # mail auto-configuration so the app context doesn't fail to start in tests.
+    host: localhost
+    port: 25
+    username: test
+    password: test
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+          from: test@example.com
+
 server:
   port: 8008
+
+money:
+  manager:
+    frontend:
+      url: http://localhost:5173
+
+app:
+  activation:
+    url: http://localhost:8008

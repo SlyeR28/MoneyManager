@@ -41,7 +41,7 @@ public class CustomSecurityconfig {
                 .authorizeHttpRequests(request->{
                     request.requestMatchers
                             ("/api/home" , "/api/v1/register"
-                                    , "/api/v1/activation" , "/api/v1/login" , "/h2-console/**").permitAll();
+                                    , "/api/v1/activation" , "/api/v1/login" , "/h2-console/**" ,  "/actuator/**").permitAll();
                     request.anyRequest().authenticated();
 
                 })   .headers(headers -> headers

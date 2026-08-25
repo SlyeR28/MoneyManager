@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: MoneyManagement
+
+  datasource:
+    # DB_HOST here = your RDS endpoint, e.g. moneymanagement.xxxxxxx.rds.amazonaws.com
+    # No default value on purpose - if it's missing, the app should fail to start
+    # instead of silently connecting to nothing.
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?useSSL=true&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      # validate, not update - never let the app auto-alter the prod schema.
+      # Run migrations deliberately (Flyway/Liquibase or manual), separately.
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  mail:
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    port: ${MAIL_PORT:587}
+    username: ${BREVO_LOGIN}
+    password: ${BREVO_PASSWORD}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          from: ${BREVO_MAIL}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+money:
+  manager:
+    frontend:
+      url: ${FRONTEND_URL}
+
+app:
+  activation:
+    url: ${MONEY_MANAGER_BACKEND_URL}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

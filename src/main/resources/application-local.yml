@@ -3,10 +3,10 @@ spring:
     name: MoneyManagement
 
   datasource:
-    url: jdbc:mysql://localhost:3306/MoneyManagement?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:MoneyManagement}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: Rishabh@28
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Rishabh@28}
 
   jpa:
     hibernate:
@@ -23,10 +23,10 @@ spring:
       password: Rishabh@123
 
   mail:
-    host: smtp-relay.brevo.com
-    port: 587
-    username: ${BREVO_LOGIN}
-    password: ${BREVO_PASSWORD}
+    host: ${MAIL_HOST:smtp-relay.brevo.com}
+    port: ${MAIL_PORT:587}
+    username: ${BREVO_LOGIN:}
+    password: ${BREVO_PASSWORD:}
     protocol: smtp
     properties:
       mail:
@@ -34,13 +34,16 @@ spring:
           auth: true
           starttls:
             enable: true
-          from: ${BREVO_MAIL}
+          from: ${BREVO_MAIL:}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
-
+money:
+  manager:
+    frontend:
+      url: ${FRONTEND_URL:http://localhost:5173}
 
 app:
   activation:
-    url: ${MONEY_MANAGER_BACKEND_URL}
+    url: ${MONEY_MANAGER_BACKEND_URL:http://localhost:8080}
