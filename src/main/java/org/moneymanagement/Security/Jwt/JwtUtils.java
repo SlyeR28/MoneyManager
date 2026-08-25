@@ -45,7 +45,7 @@ public class JwtUtils {
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = Jwts.parser()
-                .verifyWith((SecretKey) getSignKey())
+                .verifyWith(getSignKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

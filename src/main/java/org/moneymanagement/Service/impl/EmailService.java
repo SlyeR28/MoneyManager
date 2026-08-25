@@ -1,6 +1,7 @@
 package org.moneymanagement.Service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.moneymanagement.exception.EmailSendingException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -24,7 +25,7 @@ public class EmailService {
             message.setText(body);
             mailSender.send(message);
         } catch (Exception e) {
-            throw new org.moneymanagement.Exception.EmailSendingException("Failed to send email to " + to + ": " + e.getMessage(), e);
+            throw new EmailSendingException("Failed to send email to " + to + ": " + e.getMessage(), e);
         }
 
     }

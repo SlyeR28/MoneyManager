@@ -9,6 +9,8 @@ import org.moneymanagement.Payload.Response.CategoryResponse;
 import org.moneymanagement.Repository.CategoryRepository;
 import org.moneymanagement.Service.CategoryService;
 import org.moneymanagement.Service.ProfileService;
+import org.moneymanagement.exception.DuplicateResourceException;
+import org.moneymanagement.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryRequest categoryRequest) {
         ProfileEntity currentProfile = profileService.getCurrentProfile();
         if(Boolean.TRUE.equals(categoryRepo.existsByNameAndProfileId(categoryRequest.getName(), currentProfile.getId()))){
-            throw new org.moneymanagement.Exception.DuplicateResourceException("Category with name " + categoryRequest.getName() + " already exists");
+            throw new DuplicateResourceException("Category with name " + categoryRequest.getName() + " already exists");
         }
         Category category = catogeryMapper.toEntityCategory(categoryRequest);
         categoryRepo.save(category);
@@ -40,7 +42,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(Long categoryId ,CategoryRequest categoryRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(categoryId, profile.getId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException(CATEGORY_NOT_FOUND + categoryId));
+                .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_NOT_FOUND + categoryId));
         category.setName(categoryRequest.getName());
         category.setIcon(categoryRequest.getIcon());
         category.setType(categoryRequest.getType());
@@ -53,7 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(id, profile.getId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException(CATEGORY_NOT_FOUND + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_NOT_FOUND + id));
         categoryRepo.delete(category);
     }
 
@@ -61,7 +63,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse findById(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(id, profile.getId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException(CATEGORY_NOT_FOUND + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CATEGORY_NOT_FOUND + id));
         return catogeryMapper.toCategoryResponse(category);
     }
 

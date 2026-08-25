@@ -11,6 +11,8 @@ import org.moneymanagement.Repository.CategoryRepository;
 import org.moneymanagement.Repository.ExpenseRepository;
 import org.moneymanagement.Service.ExpenseService;
 import org.moneymanagement.Service.ProfileService;
+import org.moneymanagement.exception.ResourceNotFoundException;
+import org.moneymanagement.exception.UnauthorizedException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +34,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     public ExpenseResponse addExpense(ExpenseRequest expenseRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepository.findById(expenseRequest.getCategoryId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category not found with id: " + expenseRequest.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + expenseRequest.getCategoryId()));
         Expense expense = expenseMapper.requestToEntity(expenseRequest);
         expense.setProfile(profile);
         expense.setCategory(category);
@@ -61,9 +63,9 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public void deleteExpense(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
-        Expense expense = expenseRepository.findById(id).orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Expense not found with id: " + id));
+        Expense expense = expenseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Expense not found with id: " + id));
         if(!expense.getProfile().getId().equals(profile.getId())) {
-            throw new org.moneymanagement.Exception.UnauthorizedException("Unauthorized to delete this expense");
+            throw new UnauthorizedException("Unauthorized to delete this expense");
         }
 
         expenseRepository.delete(expense);

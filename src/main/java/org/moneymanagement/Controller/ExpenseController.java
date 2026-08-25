@@ -32,19 +32,19 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{expenseId}")
-    public ResponseEntity<?> deleteExpense(@PathVariable("expenseId") Long expenseId) {
+    public ResponseEntity<Void> deleteExpense(@PathVariable("expenseId") Long expenseId) {
         expenseService.deleteExpense(expenseId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/top5")
-    public ResponseEntity<List<ExpenseResponse>> getTop5Expenses() throws  Exception {
+    public ResponseEntity<List<ExpenseResponse>> getTop5Expenses() {
         List<ExpenseResponse> forCurrentUser = expenseService.getLastest5ExpensesForCurrentUser();
         return ResponseEntity.status(HttpStatus.OK).body(forCurrentUser);
     }
 
     @GetMapping("/total")
-    public ResponseEntity<BigDecimal> getTotalExpenses() throws  Exception {
+    public ResponseEntity<BigDecimal> getTotalExpenses() {
         BigDecimal currentUser = expenseService.getTotalExpensesOfCurrentUser();
         return ResponseEntity.status(HttpStatus.OK).body(currentUser);
     }

@@ -12,6 +12,8 @@ import org.moneymanagement.Repository.CategoryRepository;
 import org.moneymanagement.Repository.IncomeRepository;
 import org.moneymanagement.Service.IncomeService;
 import org.moneymanagement.Service.ProfileService;
+import org.moneymanagement.exception.ResourceNotFoundException;
+import org.moneymanagement.exception.UnauthorizedException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +35,7 @@ public class IncomeServiceImpl implements IncomeService {
     public IncomeResponse addIncome(IncomeRequest incomeRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepository.findById(incomeRequest.getCategoryId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category not found with id: " + incomeRequest.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + incomeRequest.getCategoryId()));
         Income income = incomeMapper.requestToEntity(incomeRequest);
         income.setProfile(profile);
         income.setCategory(category);
@@ -61,9 +63,9 @@ public class IncomeServiceImpl implements IncomeService {
     @Override
     public void deleteExpense(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
-        Income income = incomeRepository.findById(id).orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Income not found with id: " + id));
+        Income income = incomeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Income not found with id: " + id));
         if(!income.getProfile().getId().equals(profile.getId())) {
-            throw new org.moneymanagement.Exception.UnauthorizedException("Unauthorized to delete this income");
+            throw new UnauthorizedException("Unauthorized to delete this income");
         }
         incomeRepository.delete(income);
     }

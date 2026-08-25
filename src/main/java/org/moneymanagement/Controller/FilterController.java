@@ -25,7 +25,7 @@ public class FilterController {
     private final ExpenseService expenseService;
 
     @PostMapping("/")
-    public ResponseEntity<?> filterTransactions(@RequestBody FilterDto filterDto) {
+    public ResponseEntity<Object> filterTransactions(@RequestBody FilterDto filterDto) {
         LocalDate startDate = filterDto.getStartDate() != null ? filterDto.getStartDate() : LocalDate.MIN;
         LocalDate endDate = filterDto.getEndDate() != null ? filterDto.getEndDate() : LocalDate.now();
         String keyword = filterDto.getKeyword() != null ? filterDto.getKeyword() : "";
