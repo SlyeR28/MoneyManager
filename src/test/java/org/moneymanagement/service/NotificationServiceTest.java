@@ -7,12 +7,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.moneymanagement.Entity.ProfileEntity;
-import org.moneymanagement.Payload.Response.ExpenseResponse;
-import org.moneymanagement.Repository.ProfileRepository;
-import org.moneymanagement.Service.ExpenseService;
-import org.moneymanagement.Service.impl.EmailService;
-import org.moneymanagement.Service.impl.NotificationService;
+import org.moneymanagement.entity.ProfileEntity;
+import org.moneymanagement.payload.response.ExpenseResponse;
+import org.moneymanagement.repository.ProfileRepository;
+import org.moneymanagement.service.ExpenseService;
+import org.moneymanagement.service.impl.EmailService;
+import org.moneymanagement.service.impl.NotificationService;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;

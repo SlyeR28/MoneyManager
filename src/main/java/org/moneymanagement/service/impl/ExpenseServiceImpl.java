@@ -1,0 +1,103 @@
+package org.moneymanagement.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import org.moneymanagement.entity.Category;
+import org.moneymanagement.entity.Expense;
+import org.moneymanagement.entity.ProfileEntity;
+import org.moneymanagement.mappers.ExpenseMapper;
+import org.moneymanagement.payload.request.ExpenseRequest;
+import org.moneymanagement.payload.response.ExpenseResponse;
+import org.moneymanagement.repository.CategoryRepository;
+import org.moneymanagement.repository.ExpenseRepository;
+import org.moneymanagement.service.ExpenseService;
+import org.moneymanagement.service.ProfileService;
+import org.moneymanagement.exception.ResourceNotFoundException;
+import org.moneymanagement.exception.UnauthorizedException;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ExpenseServiceImpl implements ExpenseService {
+
+    private final ProfileService  profileService;
+    private final CategoryRepository categoryRepository;
+    private final ExpenseRepository expenseRepository;
+    private final ExpenseMapper  expenseMapper;
+
+
+    @Override
+    public ExpenseResponse addExpense(ExpenseRequest expenseRequest) {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        Category category = categoryRepository.findById(expenseRequest.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + expenseRequest.getCategoryId()));
+        Expense expense = expenseMapper.requestToEntity(expenseRequest);
+        expense.setProfile(profile);
+        expense.setCategory(category);
+        Expense saved = expenseRepository.save(expense);
+        return expenseMapper.entityToResponse(saved);
+
+    }
+
+    @Override
+    public ExpenseResponse updateExpense(ExpenseRequest expenseRequest) {
+        return null;
+    }
+
+    @Override
+    public List<ExpenseResponse> getCurrentMonthExpensesForCurrentUser() {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        LocalDate currentDate = LocalDate.now();
+        LocalDate start = currentDate.withDayOfMonth(1);
+        LocalDate end = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
+        List<Expense> between = expenseRepository.findByProfileIdAndDateBetween
+                (profile.getId(), start, end);
+
+       return   between.stream().map(expenseMapper::entityToResponse).toList();
+    }
+
+    @Override
+    public void deleteExpense(Long id) {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        Expense expense = expenseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Expense not found with id: " + id));
+        if(!expense.getProfile().getId().equals(profile.getId())) {
+            throw new UnauthorizedException("Unauthorized to delete this expense");
+        }
+
+        expenseRepository.delete(expense);
+    }
+
+
+    @Override
+    public List<ExpenseResponse> getLastest5ExpensesForCurrentUser() {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        List<Expense> orderByDateDesc = expenseRepository.findTop5ByProfileIdOrderByDateDesc(profile.getId());
+        return  orderByDateDesc.stream().map(expenseMapper::entityToResponse).toList();
+
+    }
+
+    @Override
+    public BigDecimal getTotalExpensesOfCurrentUser() {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        BigDecimal expense = expenseRepository.findTotalExpenseByProfileId(profile.getId());
+        return expense != null ? expense : BigDecimal.ZERO;
+    }
+
+    @Override
+    public List<ExpenseResponse> filterExpenses(LocalDate startDate, LocalDate endDate, String keyword, Sort sort) {
+        ProfileEntity profile = profileService.getCurrentProfile();
+        List<Expense> expenseList = expenseRepository.
+                findByProfileIdAndDateBetweenAndNameContainingIgnoreCase(profile.getId(), startDate, endDate, keyword, sort);
+        return  expenseList.stream().map(expenseMapper::entityToResponse).toList();
+    }
+
+    @Override
+    public List<ExpenseResponse> getExpensesByUserOnDate(Long profileId, LocalDate date) {
+        List<Expense> expenseList = expenseRepository.findByProfileIdAndDate(profileId, date);
+        return  expenseList.stream().map(expenseMapper::entityToResponse).toList();
+    }
+}

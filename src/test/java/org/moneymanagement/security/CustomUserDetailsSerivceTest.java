@@ -6,9 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.moneymanagement.Entity.ProfileEntity;
-import org.moneymanagement.Repository.ProfileRepository;
-import org.moneymanagement.Security.Services.CustomUserDetailsSerivce;
+import org.moneymanagement.entity.ProfileEntity;
+import org.moneymanagement.repository.ProfileRepository;
+import org.moneymanagement.security.services.CustomUserDetailsSerivce;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 

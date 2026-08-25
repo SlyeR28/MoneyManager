@@ -12,11 +12,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.moneymanagement.Entity.ProfileEntity;
-import org.moneymanagement.Security.Jwt.JwtAuthFilter;
-import org.moneymanagement.Security.Jwt.JwtUtils;
-import org.moneymanagement.Security.Services.CustomUserDetail;
-import org.moneymanagement.Security.Services.CustomUserDetailsSerivce;
+import org.moneymanagement.entity.ProfileEntity;
+import org.moneymanagement.security.jwt.JwtAuthFilter;
+import org.moneymanagement.security.jwt.JwtUtils;
+import org.moneymanagement.security.services.CustomUserDetail;
+import org.moneymanagement.security.services.CustomUserDetailsSerivce;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 

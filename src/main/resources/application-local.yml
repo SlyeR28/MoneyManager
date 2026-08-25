@@ -6,7 +6,7 @@ spring:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:MoneyManagement}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:Rishabh@28}
+    password: ${DB_PASSWORD:}
 
   jpa:
     hibernate:
@@ -19,8 +19,8 @@ spring:
 
   security:
     user:
-      name: admin
-      password: Rishabh@123
+      name: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:}
 
   mail:
     host: ${MAIL_HOST:smtp-relay.brevo.com}

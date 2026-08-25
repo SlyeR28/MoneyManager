@@ -2,8 +2,8 @@ package org.moneymanagement.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.moneymanagement.Entity.ProfileEntity;
-import org.moneymanagement.Security.Services.CustomUserDetail;
+import org.moneymanagement.entity.ProfileEntity;
+import org.moneymanagement.security.services.CustomUserDetail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

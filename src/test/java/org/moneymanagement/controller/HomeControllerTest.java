@@ -2,7 +2,7 @@ package org.moneymanagement.controller;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.moneymanagement.Service.impl.EmailService;
+import org.moneymanagement.service.impl.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;

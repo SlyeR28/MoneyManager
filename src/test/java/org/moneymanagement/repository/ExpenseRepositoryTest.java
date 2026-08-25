@@ -2,12 +2,12 @@ package org.moneymanagement.repository;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.moneymanagement.Entity.Category;
-import org.moneymanagement.Entity.Expense;
-import org.moneymanagement.Entity.ProfileEntity;
-import org.moneymanagement.Repository.CategoryRepository;
-import org.moneymanagement.Repository.ExpenseRepository;
-import org.moneymanagement.Repository.ProfileRepository;
+import org.moneymanagement.entity.Category;
+import org.moneymanagement.entity.Expense;
+import org.moneymanagement.entity.ProfileEntity;
+import org.moneymanagement.repository.CategoryRepository;
+import org.moneymanagement.repository.ExpenseRepository;
+import org.moneymanagement.repository.ProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Sort;
