@@ -25,38 +25,37 @@ pipeline {
             }
         }
 
-        stage('Test + SonarQube') {
-            agent { label 'test-agent' }
-            options { skipDefaultCheckout() }
-            environment {
-                SPRING_PROFILES_ACTIVE = 'test'
-            }
-            steps {
-                unstash 'test-artifacts'
-                sh 'mvn test'   // generate coverage and test reports
+     stage('Test + SonarQube') {
+    agent { label 'test-agent' }
+    options { skipDefaultCheckout() }
+    environment {
+        SPRING_PROFILES_ACTIVE = 'test'
+    }
+    steps {
+        unstash 'test-artifacts'
+        sh 'mvn test'   // generate coverage and test reports
 
-                withSonarQubeEnv('SonarQube') {
-                    // Single quotes so shell expands $SONAR_HOST_URL, $SONAR_TOKEN, $SONAR_PROJECT_KEY
-                    sh '''
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.login=$SONAR_TOKEN \
-                          -Dsonar.scm.disabled=true \
-                          -Dsonar.java.libraries=target/classes
-                    '''
-                }
+        withSonarQubeEnv('SonarQube') {
+            sh '''
+                mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                  -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                  -Dsonar.host.url=$SONAR_HOST_URL \
+                  -Dsonar.login=$SONAR_TOKEN \
+                  -Dsonar.scm.disabled=true \
+                  -Dsonar.java.libraries=target/classes
+            '''
+        }
 
-                script {
-                    timeout(time: 1, unit: 'HOURS') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "SonarQube Quality Gate failed: ${qg.status}"
-                        }
-                    }
+        script {
+            timeout(time: 1, unit: 'HOURS') {
+                def qg = waitForQualityGate()
+                if (qg.status != 'OK') {
+                    error "SonarQube Quality Gate failed: ${qg.status}"
                 }
             }
         }
+    }
+}
 
         stage('Dependency Scan (OWASP)') {
             agent { label 'security-agent' }
