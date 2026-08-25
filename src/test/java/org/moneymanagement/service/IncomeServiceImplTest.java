@@ -126,7 +126,7 @@ class IncomeServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteExpense should throw RuntimeException when income not found")
+    @DisplayName("deleteExpense should throw ResourceNotFoundException when income not found")
     void testDeleteExpense_NotFound() {
         ProfileEntity profile = ProfileEntity.builder().id(1L).build();
 
@@ -135,7 +135,7 @@ class IncomeServiceImplTest {
 
         assertThatThrownBy(() -> incomeService.deleteExpense(10L))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Expense not found");
+                .hasMessageContaining("Income not found with id: 10");
     }
 
     @Test
