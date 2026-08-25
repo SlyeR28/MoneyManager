@@ -11,7 +11,6 @@ pipeline {
         stage('Build') {
             agent { label 'build-agent' }
             environment {
-                SPRING_PROFILES_ACTIVE = 'test'
                 MAVEN_OPTS = '-Xmx1024m'
             }
             steps {
@@ -21,40 +20,42 @@ pipeline {
                 stash includes: 'target/*.jar', excludes: 'target/*.jar.original', name: 'jar-artifact'
                 stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
                 stash includes: 'Dockerfile', name: 'dockerfile'
+                stash includes: 'docker-compose.yaml', name: 'docker-compose'
                 stash includes: '**', name: 'full-project-for-owasp'
             }
         }
 
         stage('Test + SonarQube') {
-            agent { label 'test-agent' }
-            options { skipDefaultCheckout() }
-            environment {
-                SPRING_PROFILES_ACTIVE = 'test'
-            }
-            steps {
-                unstash 'test-artifacts'
-                sh 'mvn test'
+    agent { label 'test-agent' }
+    options { skipDefaultCheckout() }
+    environment {
+        SPRING_PROFILES_ACTIVE = 'test'
+    }
+    steps {
+        unstash 'test-artifacts'
+        sh 'mvn test'   // generate coverage and test reports
 
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        sonar-scanner \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.sources=src/main/java \
-                          -Dsonar.tests=src/test/java \
-                          -Dsonar.java.binaries=target/classes
-                    """
-                }
+        withSonarQubeEnv('SonarQube') {
+            sh """
+                mvn sonar:sonar \
+                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                  -Dsonar.host.url=${SONAR_HOST_URL} \
+                  -Dsonar.login=${SONAR_TOKEN} \
+                  -Dsonar.scm.disabled=true \
+                  -Dsonar.java.libraries=target/classes
+            """
+        }
 
-                script {
-                    timeout(time: 1, unit: 'HOURS') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "SonarQube Quality Gate failed: ${qg.status}"
-                        }
-                    }
+        script {
+            timeout(time: 1, unit: 'HOURS') {
+                def qg = waitForQualityGate()
+                if (qg.status != 'OK') {
+                    error "SonarQube Quality Gate failed: ${qg.status}"
                 }
             }
         }
+    }
+}
 
         stage('Dependency Scan (OWASP)') {
             agent { label 'security-agent' }
@@ -85,16 +86,66 @@ pipeline {
             }
         }
 
-        stage('Docker Build, Scan, Push') {
+        stage('Docker Build, Scan, Test & Push') {
             agent { label 'docker-agent' }
             options { skipDefaultCheckout() }
             steps {
                 unstash 'jar-artifact'
                 unstash 'dockerfile'
+                unstash 'docker-compose'
 
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                // Build Docker image
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} -t money-management-app:latest ."
+
+                // Trivy security vulnerability scan
                 sh "trivy image --severity CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${DOCKER_TAG}"
 
+                // Ephemeral in-container smoke test & health check
+                script {
+                    echo "🚀 Starting ephemeral containers to test Docker boot & SQL seeding..."
+                    sh '''
+                        DB_ROOT_PASSWORD=Admin \
+                        DB_NAME=MoneyManagement \
+                        DB_USERNAME=admin \
+                        DB_PASSWORD=Admin \
+                        JPA_DDL_AUTO=update \
+                        BREVO_LOGIN=test \
+                        BREVO_PASSWORD=test \
+                        BREVO_MAIL=test@example.com \
+                        docker compose up -d
+                    '''
+
+                    echo "⏳ Waiting for App to become healthy on /actuator/health..."
+                    sh '''
+                        HEALTHY=false
+                        for i in $(seq 1 30); do
+                            if curl -s http://localhost:8009/actuator/health | grep '"status":"UP"'; then
+                                echo "✅ Spring Boot Application & MySQL are UP and HEALTHY!"
+                                HEALTHY=true
+                                break
+                            fi
+                            echo "Waiting for app to start... ($i/30)"
+                            sleep 3
+                        done
+
+                        if [ "$HEALTHY" != "true" ]; then
+                            echo "❌ Actuator Health check failed! Container logs:"
+                            docker logs money-app-container
+                            exit 1
+                        fi
+
+                        echo "🔍 Testing API response..."
+                        curl -f -s http://localhost:8009/api/home || {
+                            echo "❌ API check /api/home failed!"
+                            docker logs money-app-container
+                            exit 1
+                        }
+
+                        echo "✅ Database & Docker smoke tests passed!"
+                    '''
+                }
+
+                // Push to Docker Hub after health & smoke tests succeed
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'docker-registry-credentials',
@@ -106,6 +157,12 @@ pipeline {
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                     sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                }
+            }
+            post {
+                always {
+                    // Clean up test containers and volumes from the agent
+                    sh 'docker compose down -v || true'
                 }
             }
         }
@@ -129,3 +186,4 @@ pipeline {
         }
     }
 }
+
