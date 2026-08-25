@@ -18,7 +18,7 @@ pipeline {
                 sh 'mvn clean package -DskipTests'
 
                 stash includes: 'target/*.jar', excludes: 'target/*.jar.original', name: 'jar-artifact'
-                stash includes: 'src/**, pom.xml, target/classes/**, target/test-classes/**', name: 'test-artifacts'
+                stash includes: 'src/**, pom.xml', name: 'test-artifacts'
                 stash includes: 'Dockerfile', name: 'dockerfile'
                 stash includes: 'docker-compose.yaml', name: 'docker-compose'
                 stash includes: '**', name: 'full-project-for-owasp'
@@ -32,6 +32,7 @@ pipeline {
         SPRING_PROFILES_ACTIVE = 'test'
     }
     steps {
+        cleanWs()
         unstash 'test-artifacts'
         sh 'mvn test'   // generate coverage and test reports
 
