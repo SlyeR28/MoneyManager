@@ -33,7 +33,7 @@ public class IncomeServiceImpl implements IncomeService {
     public IncomeResponse addIncome(IncomeRequest incomeRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepository.findById(incomeRequest.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category not found with id: " + incomeRequest.getCategoryId()));
         Income income = incomeMapper.requestToEntity(incomeRequest);
         income.setProfile(profile);
         income.setCategory(category);

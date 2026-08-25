@@ -31,8 +31,8 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public ExpenseResponse addExpense(ExpenseRequest expenseRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
-        Category category = categoryRepository.findById(expenseRequest.getCategoryId()).
-                orElseThrow(() -> new RuntimeException("Category not found"));
+        Category category = categoryRepository.findById(expenseRequest.getCategoryId())
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category not found with id: " + expenseRequest.getCategoryId()));
         Expense expense = expenseMapper.requestToEntity(expenseRequest);
         expense.setProfile(profile);
         expense.setCategory(category);

@@ -10,6 +10,7 @@ import org.moneymanagement.Repository.CategoryRepository;
 import org.moneymanagement.Repository.ExpenseRepository;
 import org.moneymanagement.Repository.IncomeRepository;
 import org.moneymanagement.Repository.ProfileRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +36,9 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final IncomeRepository incomeRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${seeder.default.password:MoneyMgr#SecureSeed2026!}")
+    private String seederDefaultPassword;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -58,7 +62,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private List<ProfileEntity> createProfiles() {
-        String defaultPassword = passwordEncoder.encode("Password@123");
+        String defaultPassword = passwordEncoder.encode(seederDefaultPassword);
 
         List<ProfileEntity> profiles = List.of(
             ProfileEntity.builder()

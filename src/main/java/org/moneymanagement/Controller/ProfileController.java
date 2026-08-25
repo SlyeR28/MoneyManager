@@ -22,6 +22,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProfileController {
 
+    private static final String MESSAGE_KEY = "message";
+
     private final ProfileService  profileService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
@@ -48,7 +50,7 @@ public class ProfileController {
         try {
             if (!profileService.isAccountActivated(authRequest.getEmail())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Account not activated. Please check your email."));
+                        .body(Map.of(MESSAGE_KEY, "Account not activated. Please check your email."));
             }
 
             Authentication authentication = authenticationManager.authenticate(
@@ -60,13 +62,13 @@ public class ProfileController {
             String token = jwtUtils.generateToken(authRequest.getEmail());
 
             return ResponseEntity.ok(Map.of(
-                    "message", "Login successful",
+                    MESSAGE_KEY, "Login successful",
                     "token", token,
                     "email", authRequest.getEmail()
             ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials: " + e.getMessage()));
+                    .body(Map.of(MESSAGE_KEY, "Invalid credentials: " + e.getMessage()));
         }
     }
 }

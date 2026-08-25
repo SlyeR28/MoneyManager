@@ -76,19 +76,15 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ProfileResponse getPublicProfile(String email) {
-
-        ProfileEntity currentUser = null;
-
-        if(email==null){
-          currentUser =  getCurrentProfile();
-        }
-        {
-            currentUser=  profileRepository.findByEmail(email).
-                    orElseThrow(() -> new UsernameNotFoundException("Profile Not Found" + email));
+        ProfileEntity currentUser;
+        if (email == null) {
+            currentUser = getCurrentProfile();
+        } else {
+            currentUser = profileRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("Profile Not Found: " + email));
         }
 
         return profileMapper.toResponse(currentUser);
-
     }
 
 

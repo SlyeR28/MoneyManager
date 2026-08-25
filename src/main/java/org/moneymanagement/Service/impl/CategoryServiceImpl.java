@@ -17,6 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
+    private static final String CATEGORY_NOT_FOUND = "Category Not Found with id: ";
+
     private final CategoryRepository categoryRepo;
     private final CatogeryMapper catogeryMapper;
     private final ProfileService profileService;
@@ -38,7 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(Long categoryId ,CategoryRequest categoryRequest) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(categoryId, profile.getId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category Not Found with id: " + categoryId));
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException(CATEGORY_NOT_FOUND + categoryId));
         category.setName(categoryRequest.getName());
         category.setIcon(categoryRequest.getIcon());
         category.setType(categoryRequest.getType());
@@ -51,7 +53,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(id, profile.getId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category Not Found with id: " + id));
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException(CATEGORY_NOT_FOUND + id));
         categoryRepo.delete(category);
     }
 
@@ -59,7 +61,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse findById(Long id) {
         ProfileEntity profile = profileService.getCurrentProfile();
         Category category = categoryRepo.findByIdAndProfileId(id, profile.getId())
-                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException("Category Not Found with id: " + id));
+                .orElseThrow(() -> new org.moneymanagement.Exception.ResourceNotFoundException(CATEGORY_NOT_FOUND + id));
         return catogeryMapper.toCategoryResponse(category);
     }
 
