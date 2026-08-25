@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,7 +55,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         List<Expense> between = expenseRepository.findByProfileIdAndDateBetween
                 (profile.getId(), start, end);
 
-       return   between.stream().map(expenseMapper::entityToResponse).collect(Collectors.toList());
+       return   between.stream().map(expenseMapper::entityToResponse).toList();
     }
 
     @Override
