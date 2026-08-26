@@ -103,7 +103,6 @@ pipeline {
                 // Ephemeral smoke test & health check
                 withCredentials([file(credentialsId: 'docker-env-file', variable: 'ENV_FILE')]) {
                     sh '''
-                        cp "$ENV_FILE" .env.docker
                         docker compose --env-file .env.docker up -d
                     '''
 
@@ -156,7 +155,6 @@ pipeline {
                     // Clean up test containers and volumes
                     withCredentials([file(credentialsId: 'docker-env-file', variable: 'ENV_FILE')]) {
                         sh '''
-                            cp "$ENV_FILE" .env.docker
                             docker compose --env-file .env.docker down -v || true
                         '''
                     }
