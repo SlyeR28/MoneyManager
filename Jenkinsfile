@@ -25,39 +25,37 @@ pipeline {
             }
         }
 
-     stage('Test + SonarQube') {
-    agent { label 'test-agent' }
-    options { skipDefaultCheckout() }
-    environment {
-        SPRING_PROFILES_ACTIVE = 'test'
-    }
-    steps {
-        cleanWs()
-        unstash 'test-artifacts'
-        // verify phase runs tests AND triggers jacoco:report, producing target/site/jacoco/jacoco.xml
-        sh 'mvn verify'
+        stage('Test + SonarQube') {
+            agent { label 'test-agent' }
+            options { skipDefaultCheckout() }
+            environment {
+                SPRING_PROFILES_ACTIVE = 'test'
+            }
+            steps {
+                cleanWs()
+                unstash 'test-artifacts'
+                sh 'mvn verify'   // runs tests + jacoco:report
 
-        withSonarQubeEnv('SonarQube') {
-            sh """
-                mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                  -Dsonar.scm.disabled=true \
-                  -Dsonar.test.exclusions=**/src/test/** \
-                  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-            """
-        }
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                          -Dsonar.scm.disabled=true \
+                          -Dsonar.test.exclusions=**/src/test/** \
+                          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                    '''
+                }
 
-
-        script {
-            timeout(time: 1, unit: 'HOURS') {
-                def qg = waitForQualityGate()
-                if (qg.status != 'OK') {
-                    error "SonarQube Quality Gate failed: ${qg.status}"
+                script {
+                    timeout(time: 1, unit: 'HOURS') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "SonarQube Quality Gate failed: ${qg.status}"
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
         stage('Dependency Scan (OWASP)') {
             agent { label 'security-agent' }
@@ -76,14 +74,14 @@ pipeline {
                 }
 
                 publishHTML([
-                    target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'target',
-                        reportFiles: 'dependency-check-report.html',
-                        reportName: 'OWASP Dependency-Check Report'
-                    ]
+                        target: [
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: 'target',
+                                reportFiles: 'dependency-check-report.html',
+                                reportName: 'OWASP Dependency-Check Report'
+                        ]
                 ])
             }
         }
@@ -102,22 +100,14 @@ pipeline {
                 // Trivy security vulnerability scan
                 sh "trivy image --severity CRITICAL --exit-code 1 ${DOCKER_IMAGE}:${DOCKER_TAG}"
 
-                // Ephemeral in-container smoke test & health check
-                script {
-                    echo "🚀 Starting ephemeral containers to test Docker boot & SQL seeding..."
+                // Ephemeral smoke test & health check
+                withCredentials([file(credentialsId: 'docker-env-file', variable: 'ENV_FILE')]) {
                     sh '''
-                        DB_ROOT_PASSWORD=Admin \
-                        DB_NAME=MoneyManagement \
-                        DB_USERNAME=admin \
-                        DB_PASSWORD=Admin \
-                        JPA_DDL_AUTO=update \
-                        BREVO_LOGIN=test \
-                        BREVO_PASSWORD=test \
-                        BREVO_MAIL=test@example.com \
-                        docker compose up -d
+                        cp "$ENV_FILE" .env.docker
+                        docker compose --env-file .env.docker up -d
                     '''
 
-                    echo "⏳ Waiting for App to become healthy on /actuator/health..."
+                    echo "⏳ Waiting for App to become healthy..."
                     sh '''
                         HEALTHY=false
                         for i in $(seq 1 30); do
@@ -147,13 +137,13 @@ pipeline {
                     '''
                 }
 
-                // Push to Docker Hub after health & smoke tests succeed
+                // Push to Docker Hub
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'docker-registry-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
+                        usernamePassword(
+                                credentialsId: 'docker-registry-credentials',
+                                usernameVariable: 'DOCKER_USER',
+                                passwordVariable: 'DOCKER_PASS'
+                        )
                 ]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
@@ -163,8 +153,13 @@ pipeline {
             }
             post {
                 always {
-                    // Clean up test containers and volumes from the agent
-                    sh 'docker compose down -v || true'
+                    // Clean up test containers and volumes
+                    withCredentials([file(credentialsId: 'docker-env-file', variable: 'ENV_FILE')]) {
+                        sh '''
+                            cp "$ENV_FILE" .env.docker
+                            docker compose --env-file .env.docker down -v || true
+                        '''
+                    }
                 }
             }
         }
@@ -174,10 +169,10 @@ pipeline {
         success {
             echo 'CI pipeline completed successfully. Triggering IaC deployment...'
             build job: 'money-app-IaC', parameters: [
-                string(name: 'ENVIRONMENT', value: 'prod'),
-                string(name: 'AWS_REGION', value: 'ap-south-1'),
-                string(name: 'ACTION', value: 'Deploy'),
-                string(name: 'DOCKER_TAG', value: env.BUILD_NUMBER)
+                    string(name: 'ENVIRONMENT', value: 'prod'),
+                    string(name: 'AWS_REGION', value: 'ap-south-1'),
+                    string(name: 'ACTION', value: 'Deploy'),
+                    string(name: 'DOCKER_TAG', value: env.BUILD_NUMBER)
             ], wait: false
         }
         failure {
