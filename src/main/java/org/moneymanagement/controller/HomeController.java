@@ -11,7 +11,7 @@ public class HomeController {
 
     @GetMapping("/home")
     public String healthCheck(){
-        return "Application is Running on port ////";
+        return "Application is Running";
     }
 }
 
